@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
+import FormInput from "../form-input/form-input.component";
+import Button from "../button/button.component";
+import { UserContext } from "../../contexts/user.context";
 import {
     signInWithGooglePopup,
     createUserDocumentFromAuth,
     signInAuthUserWithEmailAndPassword,
 } from "../../utils/firebase/firebase.utils";
-import FormInput from "../form-input/form-input.component";
 import './sign-in-form.styles.scss';
-import Button from "../button/button.component";
 
 const defaultFormFields = {
     email: "",
@@ -17,19 +18,31 @@ const SignInForm = () => {
     const [formFields, setFormFields] = useState(defaultFormFields);
     const { email, password } = formFields;
 
+    const { setCurrentUser } = useContext(UserContext);
+
     const resetFormFields = () => {
         setFormFields(defaultFormFields);
     };
 
     const signInWithGoogle = async () => {
-        const { user } = await signInWithGooglePopup();
-        await createUserDocumentFromAuth(user);
+        try {
+            const { user } = await signInWithGooglePopup();
+            await createUserDocumentFromAuth(user);
+        }
+        catch (error) {
+            if (error.code === "auth/popup-closed-by-user") {
+                alert("Try login again or use alternate option");
+            } else {
+                console.log("user login encountered an error", error);
+            }
+        }
     };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         try {
-            const response = signInAuthUserWithEmailAndPassword(email, password);
+            const { user } = await signInAuthUserWithEmailAndPassword(email, password);
+            setCurrentUser(user);
             resetFormFields();
         } catch (error) {
             switch (error.code) {
@@ -38,6 +51,9 @@ const SignInForm = () => {
                     break;
                 case 'auth/user-not-found':
                     alert('no user associated with this email');
+                    break;
+                case 'auth/invalid-login-credentials':
+                    alert('invalid login credentials');
                     break;
                 default:
                     console.log(error);
@@ -56,7 +72,6 @@ const SignInForm = () => {
             <h2>Already have an account?</h2>
             <span>Sign in with your email and password</span>
             <form onSubmit={handleSubmit}>
-
                 <FormInput
                     label="Email"
                     type="email"
