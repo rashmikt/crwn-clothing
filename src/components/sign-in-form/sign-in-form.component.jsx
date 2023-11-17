@@ -1,7 +1,6 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import FormInput from "../form-input/form-input.component";
 import Button from "../button/button.component";
-import { UserContext } from "../../contexts/user.context";
 import {
     signInWithGooglePopup,
     createUserDocumentFromAuth,
@@ -18,31 +17,18 @@ const SignInForm = () => {
     const [formFields, setFormFields] = useState(defaultFormFields);
     const { email, password } = formFields;
 
-    const { setCurrentUser } = useContext(UserContext);
-
     const resetFormFields = () => {
         setFormFields(defaultFormFields);
     };
 
     const signInWithGoogle = async () => {
-        try {
-            const { user } = await signInWithGooglePopup();
-            await createUserDocumentFromAuth(user);
-        }
-        catch (error) {
-            if (error.code === "auth/popup-closed-by-user") {
-                alert("Try login again or use alternate option");
-            } else {
-                console.log("user login encountered an error", error);
-            }
-        }
+        await signInWithGooglePopup();
     };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         try {
-            const { user } = await signInAuthUserWithEmailAndPassword(email, password);
-            setCurrentUser(user);
+            await signInAuthUserWithEmailAndPassword(email, password);
             resetFormFields();
         } catch (error) {
             switch (error.code) {
